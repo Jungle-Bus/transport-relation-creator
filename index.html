@@ -22,7 +22,8 @@
 
             <div class="inner">
                 <header class="align-center">
-                    <p>Lancer JOSM, remplir le formulaire, et commencer à éditer les nouvelles relations dans JOSM ;)</p>
+                    <p>Ce site permet de créer des nouvelles relations de lignes de transport dans JOSM</p>
+                    <p>Mode d'emploi : lancer JOSM, remplir le formulaire, et commencer à éditer les nouvelles relations dans JOSM ;)</p>
                 </header>
 
                 <form id="form_relations_creator">
@@ -65,7 +66,9 @@
                         <label for="operator">Transporteur</label>
                         <input name="operator" type="text" placeholder="nom de l'opérateur" v-model.trim="operator">
                     </div>
-
+                    <header class="align-center">
+                        <p>N'oubliez pas de vérifier si les relations existent déjà dans OSM avant de les créer</p>
+                    </header>
                     <ul class="align-center actions">
                         <li>
                             <a class="button special" v-bind:href="route_a" target="_blank">
@@ -78,9 +81,9 @@
                         <li>
                             <a class="button special" v-bind:href="route_b" target="_blank">
                                 Créer la relation
-                                {{from}}
-                                &lt;
                                 {{to}}
+                                >
+                                {{from}}
                             </a>
                         </li>
                     </ul>
@@ -92,7 +95,6 @@
                         </li>
                     </ul>
                 </form>
-
             </section>
 
             <!-- Footer -->
