@@ -1,5 +1,7 @@
-String.prototype.toProperCase = function () {
-    return this.replace(/\w\S*/g, function(txt){return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();});
+String.prototype.toProperCase = function() {
+    return this.replace(/\w\S*/g, function(txt) {
+        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+    });
 };
 
 var vm = new Vue({
@@ -10,7 +12,56 @@ var vm = new Vue({
         operator: "",
         network: "",
         code: "",
-        mode: "bus"
+        mode: "bus",
+        sas_de_verif_overpass: false,
+        overpass_result: [],
+        overpass_empty : false,
+        overpass_spinning : false
+    },
+    methods: {
+        overpass_query: function() {
+            vm.overpass_spinning = true;
+            vm.overpass_empty= false;
+            vm.sas_de_verif_overpass = false;
+
+            var network = this.network.replace(/'/g, '’')
+            var operator = this.operator.replace(/'/g, '’')
+            var code = this.code.replace(/'/g, '’')
+            var overpass_query_url = "https://overpass-api.de/api/interpreter?data="
+            overpass_query_url += "[out:json];"
+            overpass_query_url += "("
+            overpass_query_url += 'relation[type=route][~"network|operator"~"' + network + '|' + operator + '",i]["ref"~"^' + code + '$",i];'
+            overpass_query_url += 'relation[type=route_master][~"network|operator"~"' + network + '|' + operator + '",i]["ref"~"^' + code + '$",i];'
+            overpass_query_url += ");"
+            overpass_query_url += "out tags;"
+
+            fetch(overpass_query_url).then(function(response) {
+                return response.json();
+            }).then(function(j) {
+                vm.overpass_result = j.elements
+                for (var i = 0; i < vm.overpass_result.length; i++) {
+                    if (vm.overpass_result[i]['tags']['type'] == "route_master") {
+                        vm.overpass_result[i]['tags']['reglisse_type'] = "ligne";
+                    } else {
+                        vm.overpass_result[i]['tags']['reglisse_type'] = "parcours";
+                    }
+                    vm.overpass_result[i]['tags']['reglisse_name'] = vm.overpass_result[i]['tags']['name'] || 'relation mystère'
+                    vm.overpass_result[i]['tags']['reglisse_mode'] = vm.overpass_result[i]['tags']['route'] || vm.overpass_result[i]['tags']['route_master'] || "mode inconnu"
+                    vm.overpass_result[i]['tags']['reglisse_url'] = 'http://osm.org/relation/' + vm.overpass_result[i]['id']
+
+                }
+                vm.sas_de_verif_overpass = true
+                vm.overpass_spinning = false
+                if (vm.overpass_result.length == 0) {
+                    vm.overpass_empty= true;
+                }
+            }).catch(function(err) {
+                console.log(err)
+                vm.overpass_spinning = false
+
+            });
+
+        },
     },
     computed: {
         route_a: function() {

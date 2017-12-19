@@ -1,36 +1,37 @@
 <!DOCTYPE HTML>
 <html>
 
-    <head>
-        <title>Création de lignes de transport dans JOSM</title>
-        <meta charset="utf-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1"/>
-        <link rel="stylesheet" href="main.css"/>
-    </head>
+<head>
+  <title>Réglisse</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="main.css" />
+</head>
 
-    <body class="subpage">
+<body class="subpage">
 
-        <!-- Header -->
-        <header id="header">
-            <div class="inner">
-                <a href="index.html" class="logo">Création de relations de lignes de transport</a>
-            </div>
-        </header>
+  <!-- Header -->
+  <header id="header">
+    <div class="inner">
+      <a href="index.html" class="logo">Réglisse</a>
+    </div>
+  </header>
 
-        <!-- Three -->
-        <section id="three" class="wrapper">
+  <!-- Three -->
+  <section id="three" class="wrapper">
 
-            <div class="inner">
-                <header class="align-center">
-                    <p>Ce site permet de créer des nouvelles relations de lignes de transport dans JOSM</p>
-                    <p>Mode d'emploi : lancer JOSM, remplir le formulaire, et commencer à éditer les nouvelles relations dans JOSM ;)</p>
-                </header>
+    <div class="inner">
+      <header class="align-center">
+        <p>Cette page permet de vérifier l'existence de relations de ligne de transport dans OSM, et les créer dans JOSM si nécessaire.</p>
+        <p>Remplissez le formulaire et laissez-vous guider ;)
+        </p>
+      </header>
 
-                <form id="form_relations_creator">
-                    <div class="field">
-                        <label for="modes-list">Mode de transport</label>
-                        <div class="select-wrapper">
-                            <select name="modes-list" v-model="mode">
+      <form id="form_relations_creator">
+        <div class="field">
+          <label for="modes-list">Mode de transport</label>
+          <div class="select-wrapper">
+            <select name="modes-list" v-model="mode">
                                 <option value="bus">Bus</option>
                                 <option value="subway">Métro</option>
                                 <option value="tram">Tramway</option>
@@ -41,87 +42,107 @@
                                 <option value="ferry">Bateau</option>
                                 <option value="funicular">Funiculaire</option>
                             </select>
-                        </div>
-                    </div>
+          </div>
+        </div>
 
-                    <div class="field">
-                        <label for="code">Code de la ligne</label>
-                        <input name="code" type="text" placeholder="code" v-model.trim="code">
-                    </div>
+        <div class="field">
+          <label for="code">Code de la ligne</label>
+          <input name="code" type="text" placeholder="numéro de ligne" v-model.trim="code">
+        </div>
 
-                    <div class="field half first">
-                        <label for="origin">Terminus 1</label>
-                        <input name="origin" type="text" placeholder="Terminus 1" v-model.trim="from">
-                    </div>
-                    <div class="field half">
-                        <label for="destination">Terminus 2</label>
-                        <input name="destination" type="text" placeholder="Terminus 2" v-model.trim="to">
-                    </div>
+        <div class="field half first">
+          <label for="origin">Terminus 1</label>
+          <input name="origin" type="text" placeholder="départ" v-model.trim="from">
+        </div>
+        <div class="field half">
+          <label for="destination">Terminus 2</label>
+          <input name="destination" type="text" placeholder="arrivée" v-model.trim="to">
+        </div>
 
-                    <div class="field half first">
-                        <label for="network">Réseau</label>
-                        <input name="network" type="text" placeholder="nom du réseau" v-model.trim="network">
-                    </div>
-                    <div class="field half">
-                        <label for="operator">Transporteur</label>
-                        <input name="operator" type="text" placeholder="nom de l'opérateur" v-model.trim="operator">
-                    </div>
-                    <header class="align-center">
-                        <p>N'oubliez pas de vérifier si les relations existent déjà dans OSM avant de les créer</p>
-                    </header>
-                    <ul class="align-center actions">
-                        <li>
-                            <a class="button special" v-bind:href="route_a" target="_blank">
-                                Créer la relation
-                                {{from}}
-                                >
-                                {{to}}
-                            </a>
-                        </li>
-                        <li>
-                            <a class="button special" v-bind:href="route_b" target="_blank">
-                                Créer la relation
-                                {{to}}
-                                >
-                                {{from}}
-                            </a>
-                        </li>
-                    </ul>
-                    <ul class="align-center actions">
-                        <li>
-                            <a class="button special" v-bind:href="route_master" target="_blank">
-                                Créer la relation de la ligne
-                            </a>
-                        </li>
-                    </ul>
-                </form>
-            </section>
+        <div class="field half first">
+          <label for="network">Réseau</label>
+          <input name="network" type="text" placeholder="nom du réseau" v-model.trim="network">
+        </div>
+        <div class="field half">
+          <label for="operator">Transporteur</label>
+          <input name="operator" type="text" placeholder="nom de l'opérateur" v-model.trim="operator">
+        </div>
+        <header class="align-center">
+          <a class="button special" v-on:click="overpass_query" target="_blank">
+                            Rechercher
+                        </a>
+          <div v-if="overpass_spinning">... recherche de relations ...</div>
+          <div v-if="overpass_result.length">
+            <ul>
+              <p>Voici des relations existantes qui correspondent peut-être :</p>
+              <li v-for="relation in overpass_result">
+                {{relation.tags.reglisse_type}} -
+                <a v-bind:href="relation.tags.reglisse_url" target="_blank">
+                                        {{ relation.tags.reglisse_name }}</a> ({{relation.tags.reglisse_mode}})
+              </li>
+            </ul>
+            <p>Sinon, lancez JOSM, puis cliquez sur les boutons ci-dessous pour créer des nouvelles relations</p>
+          </div>
+          <p v-if="overpass_empty">Aucune relation trouvée. Lancez JOSM, puis cliquez sur les boutons ci-dessous pour créer des nouvelles relations
+          </p>
+        </header>
+        <div v-if="sas_de_verif_overpass">
+          <ul class="align-center actions">
+            <li>
+              <a class="button special" v-bind:href="route_a" target="_blank">
+                                    Créer la relation
+                                    {{from}}
+                                    >
+                                    {{to}}
+                                </a>
+            </li>
+            <li>
+              <a class="button special" v-bind:href="route_b" target="_blank">
+                                    Créer la relation
+                                    {{to}}
+                                    >
+                                    {{from}}
+                                </a>
+            </li>
+          </ul>
+          <ul class="align-center actions">
+            <li>
+              <a class="button special" v-bind:href="route_master" target="_blank">
+                                    Créer la relation de la ligne
+                                </a>
+            </li>
+          </ul>
+        </div>
+      </form>
+    </div>
+  </section>
 
-            <!-- Footer -->
-            <footer id="footer">
+  <!-- Footer -->
+  <footer id="footer">
 
-                <h3>Plus d'info ?</h3>
-                <ul class="actions">
-                    <li>
-                        <a href="https://wiki.openstreetmap.org/wiki/Tag:type%3Droute_master">wiki OSM</a>
-                    </li>
-                    <li>
-                        <a href="https://github.com/nlehuby/transport-relation-creator">Github</a>
-                    </li>
-                </ul>
+    <h3>Plus d'info ?</h3>
+    <ul class="actions">
+      <li>
+        <a href="https://wiki.openstreetmap.org/wiki/Tag:type%3Droute_master">wiki OSM</a>
+      </li>
+      <li>
+        <a href="https://github.com/nlehuby/transport-relation-creator">Github</a>
+      </li>
+    </ul>
 
-                <div class="copyright">
-                    <a href="https://nlehuby.5apps.com">nlehuby</a>, pour
-                    <a href="http://junglebus.io">JungleBus</a>. &copy; Design
-                    <a href="https://templated.co">TEMPLATED</a>
-                    <!-- Theme Projection by TEMPLATED templated.co @templatedco Released for free under the Creative Commons Attribution 3.0 license (templated.co/license) -->
+    <div class="copyright">
+      <a href="https://nlehuby.5apps.com">nlehuby</a>, pour
+      <a href="http://junglebus.io">JungleBus</a>. &copy; Design
+      <a href="https://templated.co">TEMPLATED</a>
+      <!-- Theme Projection by TEMPLATED templated.co @templatedco Released for free under the Creative Commons Attribution 3.0 license (templated.co/license) -->
 
-                </div>
+    </div>
 
-            </footer>
+  </footer>
 
-        </body>
-        <!--<script src="https://unpkg.com/vue"></script>-->
-        <script src="https://vuejs.org/js/vue.min.js"></script>
-        <script src="main.js"></script>
-    </html>
+</body>
+<!--<script src="https://unpkg.com/vue"></script>-->
+<script src="https://vuejs.org/js/vue.min.js"></script>
+<script src="main.js"></script>
+
+</html>
