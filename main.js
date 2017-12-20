@@ -13,7 +13,7 @@ var vm = new Vue({
         network: "",
         code: "",
         mode: "bus",
-        sas_de_verif_overpass: false,
+        workflow: "init",
         overpass_result: [],
         overpass_empty : false,
         overpass_spinning : false
@@ -21,8 +21,8 @@ var vm = new Vue({
     methods: {
         overpass_query: function() {
             vm.overpass_spinning = true;
+            vm.workflow = "check_existing";
             vm.overpass_empty= false;
-            vm.sas_de_verif_overpass = false;
 
             var network = this.network.replace(/'/g, '’')
             var operator = this.operator.replace(/'/g, '’')
@@ -50,8 +50,7 @@ var vm = new Vue({
                     vm.overpass_result[i]['tags']['reglisse_url'] = 'http://osm.org/relation/' + vm.overpass_result[i]['id']
 
                 }
-                vm.sas_de_verif_overpass = true
-                vm.overpass_spinning = false
+                vm.overpass_spinning = false;
                 if (vm.overpass_result.length == 0) {
                     vm.overpass_empty= true;
                 }
@@ -62,6 +61,13 @@ var vm = new Vue({
             });
 
         },
+        next_step: function() {
+          if (vm.workflow == 'check_existing') {
+              vm.workflow= 'add_other_info';
+          } else if (vm.workflow == 'add_other_info'){
+            vm.workflow= 'create_josm';
+          }
+        }
     },
     computed: {
         route_a: function() {
